@@ -33,21 +33,24 @@ Nothing here changes the order page. The books only **read** the order Sheet to 
 
 ## 3. Connect it to the order Sheet (read only)
 
-The books need to know which Sheet holds the website orders. They only ever read it.
+The books need to know **which Google Sheet holds the website orders**, so they can count sales. You tell them by giving them that Sheet's web address. The books only ever read it.
 
-1. Go to the tab with the **order Sheet**. Look at the address bar. It looks like:
+1. **Copy the order Sheet's address.**
+   - Go to the tab with the **order Sheet**: the one with the **Orders** tab that the order site fills in.
+   - Click once in the **address bar** at the top of the browser, where the web address is. The whole address turns blue (selected).
+   - Copy it (**Ctrl+C**, or **Cmd+C** on a Mac).
 
-   `https://docs.google.com/spreadsheets/d/`**`1AbCdEfGh...XyZ`**`/edit#gid=0`
+   It's a long address that looks something like
+   `https://docs.google.com/spreadsheets/d/1AbCdEf.../edit#gid=0`. Copy all of it, as it is. You don't need to cut anything out.
+2. **Give it to the books script.**
+   - Go back to the books script editor and click the **gear** icon on the far left (**Project Settings**).
+   - Scroll to the bottom, to **Script Properties**, and click **Add script property**. Two empty boxes appear.
+   - In the first box (**Property**), type `ORDER_SHEET_ID` exactly: capital letters, with underscores.
+   - In the second box (**Value**), paste the address you copied.
+   - Click **Save script properties**.
+3. Click the **< >** icon on the far left (**Editor**) to go back to the code.
 
-   The **Sheet ID** is the long part between `/d/` and `/edit`. Select exactly that part and copy it. Don't include the slashes.
-2. Back in the books script editor, click the **gear** icon on the far left (**Project Settings**).
-3. Scroll to the bottom, to **Script Properties**, and click **Add script property**.
-4. Under **Property**, type `ORDER_SHEET_ID` exactly: capital letters, with underscores.
-5. Under **Value**, paste the Sheet ID.
-6. Click **Save script properties**.
-7. Click the **< >** icon on the far left (**Editor**) to go back to the code.
-
-Script properties are private to the script. They are not in the Sheet and not on GitHub.
+Script properties are private to the script. They are not in the Sheet and not on GitHub. The shop account owns both Sheets, so the books can read the order Sheet without anything being shared.
 
 ## 4. Run setup and give permission
 
@@ -70,7 +73,7 @@ Script properties are private to the script. They are not in the Sheet and not o
    If the last line says **add ORDER_SHEET_ID**, step 3 did not save. Go back and check the property name.
 8. Copy the **admin key** (the long code after `Admin key:`) and keep it somewhere private, such as a password manager. This is the **books key**. Anyone with it can see and change the books. It is a different key from the order site's admin key.
 9. Go back to the books Sheet tab. It now has the tabs **Expenses**, **Money in**, **Batches** and **Settings**.
-10. Optional check: in the function drop-down choose **checkSales** and click **Run**. The log says how many paid or delivered orders it found in the order Sheet. If it says it could not open the order Sheet, the Sheet ID in step 3 is wrong, or the order Sheet belongs to a different Google account.
+10. Optional check: in the function drop-down choose **checkSales** and click **Run**. The log says how many paid or delivered orders it found in the order Sheet. If it says it could not open the order Sheet, the address pasted in step 3 is wrong (copy it again from the order Sheet), or the order Sheet belongs to a different Google account.
 
 Lost the key later? Choose **showAdminKey** in the drop-down and click **Run**.
 
@@ -158,6 +161,6 @@ This is general information, not tax advice. Speak to an accountant or tax pract
 |---|---|
 | "That key is not right" | Run **showAdminKey** in Apps Script and open the link again with that key. |
 | "Website sales are not connected yet" | Add the `ORDER_SHEET_ID` script property (step 3), then reload the page. |
-| "Could not open the order Sheet" | The ID is wrong, or the order Sheet belongs to a different Google account. |
+| "Could not open the order Sheet" | The address in `ORDER_SHEET_ID` is wrong (copy it again from the order Sheet), or the order Sheet belongs to a different Google account. |
 | "The order Sheet columns have changed" | Someone renamed a column in the order Sheet's Orders tab. The books read **Invoice, Qty, Total, Status, Paid on**, and a few more, by name. |
 | A wrong entry | Ledger > Edit. **Remove** hides it but keeps the row in the Sheet, marked removed, so there is always a trail. |

@@ -386,8 +386,12 @@ function dayText_(v) {
 // Website sales (read only, from the order Sheet)
 // ---------------------------------------------------------------------------
 
+// ORDER_SHEET_ID can be the Sheet's ID, or simply its whole address copied from the
+// browser (https://docs.google.com/spreadsheets/d/<ID>/edit...): the ID is taken from it.
 function orderSheetId_() {
-  return str_(PropertiesService.getScriptProperties().getProperty('ORDER_SHEET_ID'));
+  const raw = str_(PropertiesService.getScriptProperties().getProperty('ORDER_SHEET_ID'));
+  const m = /\/spreadsheets\/d\/([A-Za-z0-9_-]+)/.exec(raw);
+  return m ? m[1] : raw;
 }
 
 // Paid and delivered website orders: { invoice, date, qty, total, fee, sachets, discount, card } in cents.

@@ -235,6 +235,20 @@ test('the report works, and says so, when website sales are not connected', () =
   assert.equal(t.ok('list').salesConnected, true, 'an ID is set');
 });
 
+test('ORDER_SHEET_ID can be the whole address of the order Sheet', () => {
+  const t = books({ sales: false });
+  t.gas.addOrders([{ invoice: 'SJ-0001', qty: 2, price: 40, paidOn: '2026-10-10 12:00' }]);
+  ['https://docs.google.com/spreadsheets/d/order-sheet-id/edit#gid=0',
+    '  https://docs.google.com/spreadsheets/d/order-sheet-id/edit?usp=sharing  ',
+    'docs.google.com/spreadsheets/d/order-sheet-id',
+    'order-sheet-id'].forEach((value) => {
+    t.gas.store.set('ORDER_SHEET_ID', value);
+    const r = t.report('2026-10-01', '2026-10-31');
+    assert.equal(r.salesConnected, true, value);
+    assert.equal(r.sales.total, 80, value);
+  });
+});
+
 test('the report checks its dates', () => {
   const t = books();
   assert.equal(t.call('report', { from: '2026-10-31', to: '2026-10-01' }).error, 'invalid');
