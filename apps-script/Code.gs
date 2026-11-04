@@ -173,15 +173,22 @@ function list_() {
   Object.keys(TABLES).forEach(function (kind) {
     entries[kind] = readTable_(kind).filter(function (e) { return !e.removed; }).map(publicEntry_);
   });
+  // Paid website orders, for the ledger. They are only read: they change on the order site.
+  const web = websiteSales_();
+  const sales = web.orders.map(function (o) {
+    return { id: o.invoice, date: o.date, qty: o.qty, total: o.total / 100, fee: o.fee / 100, discount: o.discount / 100, card: o.card };
+  });
   return {
     ok: true,
     entries: entries,
+    sales: sales,
     settings: s.raw,
     owners: s.owners,
     categories: CATEGORIES,
     kinds: KINDS,
     vatRegistered: s.vatRegistered,
-    salesConnected: !!orderSheetId_(),
+    salesConnected: web.connected,
+    salesMessage: web.message || '',
     today: today_()
   };
 }

@@ -177,7 +177,7 @@ test('a batch gives the cost per sachet in the ledger', async (t) => {
 test('the ledger filters by kind, month and search, and flags missing receipts', async (t) => {
   const { page } = await open(t);
   await tab(page, 'ledger');
-  assert.match(await text(page, '#ledger-total'), /^12 entries/);
+  assert.match(await text(page, '#ledger-total'), /^18 entries/);
   await page.click('[data-role="type-expense"]');
   assert.match(await text(page, '#ledger-total'), /^7 entries · in R0\.00 · out R4,017\.00/);
   assert.equal(await page.locator('.entry .flag', { hasText: 'No receipt' }).count(), 5);
@@ -279,7 +279,27 @@ test('without website sales connected, the report says so', async (t) => {
   await page.waitForSelector('#report-profit');
   assert.match(await text(page, '#report-body .alert'), /not connected yet/);
   await tab(page, 'settings');
-  assert.match(await text(page, '#panel-settings .alert'), /ORDER_SHEET_ID/);
+  assert.match(await text(page, '#panel-settings .alert'), /not connected yet[\s\S]*SETUP-GUIDE/);
+  await tab(page, 'ledger');
+  assert.match(await text(page, '#panel-ledger .alert'), /not connected yet[\s\S]*Website sales are missing/);
+});
+
+test('the ledger lists paid website sales, read only', async (t) => {
+  const { page } = await open(t);
+  await tab(page, 'ledger');
+  await page.click('[data-role="type-sale"]');
+  // Six paid or delivered orders in the sample; the one awaiting payment is not a sale.
+  assert.match(await text(page, '#ledger-total'), /^6 entries · in R1,997\.00 · out R0\.00/);
+  assert.equal(await page.locator('.entry[data-id="SJ-0005"]').count(), 0);
+  const card = page.locator('.entry[data-id="SJ-0006"]');
+  assert.match(await card.innerText(), /21 Oct 2026 · SJ-0006[\s\S]*\+R320\.00[\s\S]*Website sale, 8 sachets[\s\S]*paid by card[\s\S]*Change it there/);
+  assert.match(await text(page, '.entry[data-id="SJ-0004"]'), /after a discount of R40\.00/);
+  assert.match(await text(page, '.entry[data-id="SJ-0001"]'), /incl\. delivery R69\.00/);
+  assert.equal(await card.getByRole('button').count(), 0, 'no Edit: sales change on the order site');
+  // Search finds a sale by its invoice number, in the full list.
+  await page.click('[data-role="type-all"]');
+  await page.fill('#ledger-search', 'sj-0003');
+  assert.match(await text(page, '#ledger-total'), /^1 entry · in R259\.00/);
 });
 
 test('owners: add a name and it is saved straight away, then remove it', async (t) => {

@@ -519,20 +519,23 @@
 
   // ---------- Ledger ----------
 
-  // Every entry as { kind, e }, newest first.
+  // Every entry as { kind, e }, newest first. Paid website orders come in as kind 'sale':
+  // they are read from the order Sheet and change only on the order site.
   function allEntries() {
     var out = [];
     ['expense', 'money', 'batch'].forEach(function (kind) {
       state.data.entries[kind].forEach(function (e) { out.push({ kind: kind, e: e }); });
     });
+    (state.data.sales || []).forEach(function (e) { out.push({ kind: 'sale', e: e }); });
     return out.sort(function (a, b) {
       if (a.e.date !== b.e.date) return a.e.date < b.e.date ? 1 : -1;
-      return a.e.added < b.e.added ? 1 : -1;
+      return (a.e.added || a.e.id) < (b.e.added || b.e.id) ? 1 : -1;
     });
   }
 
   // Money out is negative, money in positive, and a batch moves no money.
   function flow(item) {
+    if (item.kind === 'sale') return item.e.total;
     if (item.kind === 'expense') return -item.e.amount;
     if (item.kind === 'money') return item.e.kind === 'Paid back' ? -item.e.amount : item.e.amount;
     return 0;
@@ -540,6 +543,7 @@
 
   function entryTitle(item) {
     var e = item.e;
+    if (item.kind === 'sale') return 'Website sale, ' + e.qty + (e.qty === 1 ? ' sachet' : ' sachets');
     if (item.kind === 'expense') return e.what;
     if (item.kind === 'batch') return e.sachets + ' ' + e.flavour + ' sachets made';
     if (e.kind === 'Other sale') return 'Other sale' + (e.sachets ? ', ' + e.sachets + ' sachets' : '');
@@ -549,6 +553,10 @@
 
   function entryMeta(item) {
     var e = item.e;
+    if (item.kind === 'sale') {
+      return [e.fee ? 'incl. delivery ' + money2(e.fee) : '', e.discount ? 'after a discount of ' + money2(e.discount) : '', e.card ? 'paid by card' : '']
+        .filter(Boolean).join(' · ');
+    }
     if (item.kind === 'expense') return [e.category, e.paidBy === 'Business' ? 'paid by the business' : 'paid by ' + e.paidBy, e.supplier].filter(Boolean).join(' · ');
     if (item.kind === 'batch') return 'Cost ' + money(e.cost) + (e.sachets ? ', ' + money(e.cost / e.sachets) + ' a sachet' : '');
     return '';
@@ -572,7 +580,7 @@
     items.forEach(function (i) { months[i.e.date.slice(0, 7)] = true; });
 
     var chips = el('div', { class: 'chips', role: 'group', 'aria-label': 'Show' });
-    [['all', 'All'], ['expense', 'Expenses'], ['money', 'Money in'], ['batch', 'Batches']].forEach(function (t) {
+    [['all', 'All'], ['sale', 'Website sales'], ['expense', 'Expenses'], ['money', 'Money in'], ['batch', 'Batches']].forEach(function (t) {
       chips.appendChild(el('button', {
         type: 'button', class: 'chip', 'aria-pressed': String(state.filter.type === t[0]), 'data-role': 'type-' + t[0],
         onclick: function () { state.filter.type = t[0]; renderLedger(); }
@@ -591,6 +599,9 @@
 
     var listBox = el('div', { id: 'ledger-list' });
     panel.appendChild(el('h2', { class: 'section-title' }, 'Ledger'));
+    if (!state.data.salesConnected) {
+      panel.appendChild(el('div', { class: 'alert alert-wait', role: 'status' }, (state.data.salesMessage || 'Website sales are not connected.') + ' Website sales are missing below.'));
+    }
     panel.appendChild(chips);
     panel.appendChild(el('div', { class: 'form-grid' },
       el('div', { class: 'field' }, el('label', { for: 'ledger-month' }, 'Month'), month),
@@ -634,6 +645,10 @@
     var meta = entryMeta(item);
     if (meta) li.appendChild(el('p', { class: 'entry-meta' }, meta));
     if (e.notes) li.appendChild(el('p', { class: 'entry-meta' }, e.notes));
+    if (item.kind === 'sale') {
+      li.appendChild(el('p', { class: 'entry-meta fine' }, 'From the order site. Change it there.'));
+      return li;
+    }
     var tools = el('div', { class: 'entry-tools' });
     if (item.kind === 'expense') {
       tools.appendChild(e.receipt
@@ -930,7 +945,7 @@
     });
     panel.appendChild(el('h2', { class: 'section-title' }, 'Settings'));
     if (!state.data.salesConnected) {
-      panel.appendChild(el('div', { class: 'alert alert-wait' }, 'Website sales are not connected yet. Add ORDER_SHEET_ID in Script properties (see SETUP-GUIDE.md).'));
+      panel.appendChild(el('div', { class: 'alert alert-wait' }, state.data.salesMessage || 'Website sales are not connected.'));
     }
     panel.appendChild(ownersEditor());
     panel.appendChild(form);

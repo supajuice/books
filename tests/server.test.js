@@ -232,7 +232,9 @@ test('the report works, and says so, when website sales are not connected', () =
   assert.equal(r.profit, -100);
   t.gas.store.set('ORDER_SHEET_ID', 'wrong-id');
   assert.match(t.report('2026-10-01', '2026-10-31').salesMessage, /Could not open/);
-  assert.equal(t.ok('list').salesConnected, true, 'an ID is set');
+  const listed = t.ok('list');
+  assert.equal(listed.salesConnected, false, 'a wrong ID cannot be read');
+  assert.match(listed.salesMessage, /Could not open/);
 });
 
 test('ORDER_SHEET_ID can be the whole address of the order Sheet', () => {
